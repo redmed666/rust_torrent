@@ -1,14 +1,11 @@
 extern crate regex;
 extern crate url;
-use regex::Regex;
-use std::{fmt, io};
-use url::percent_encoding;
 
 // see: https://en.wikipedia.org/wiki/Magnet_URI_scheme
 pub struct Magnet {
     pub link: String,
     pub header: String,   // should be magnet:?
-    pub xts: Vec<xt>,     // eXact Topic: URN containing hash
+    pub xts: Vec<Xt>,     // eXact Topic: URN containing hash
     pub dn: String,       // Display Name: filename shown to user
     pub xl: u128,         // eXact Length: filesize
     pub acs: String,      // Acceptable Source: web link to the file online
@@ -18,12 +15,12 @@ pub struct Magnet {
     pub trs: Vec<String>, // address TRacker: tracker URL for BitTorrent downloads
 }
 
-pub struct xt {
+pub struct Xt {
     urn: String,
     hash: String,
 }
 
-impl std::fmt::Display for xt {
+impl std::fmt::Display for Xt {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "urn: {} - hash: {}", self.urn, self.hash)
     }
@@ -77,7 +74,7 @@ impl Magnet {
     }
 
     fn get_dn(&self) -> Option<String> {
-        let mut result = String::new();
+        let mut result: String;
         let re = regex::Regex::new(r"dn=(.+?)(&|$)").unwrap();
         let dns_found = re.find_iter(&(self.link)).last().unwrap().as_str();
         let dns_found = url::percent_encoding::percent_decode(dns_found.as_bytes())
@@ -88,10 +85,10 @@ impl Magnet {
     }
 }
 
-fn parse_xt(xts_out: &mut Vec<xt>, xts: Vec<String>) {
+fn parse_xt(xts_out: &mut Vec<Xt>, xts: Vec<String>) {
     for xt_ in xts {
         let xt_splitted = xt_.split(":").collect::<Vec<&str>>();
-        let xt_tmp = xt {
+        let xt_tmp = Xt {
             urn: String::from(xt_splitted[1]),
             hash: String::from(xt_splitted[2]),
         };
@@ -133,4 +130,12 @@ pub fn from_string(magnet_link: String) -> Result<Magnet, String> {
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn simple_test() {
+        assert_eq!(1, 2 - 1);
+    }
 }
