@@ -1,29 +1,28 @@
 extern crate regex;
 extern crate url;
 
-// see: https://en.wikipedia.org/wiki/Magnet_URI_scheme
+mod exact_topic;
+mod hash_tech;
+
+use exact_topic::ExactTopic;
+
+/**
+ * @overview contains information that could be stored in a magnet link
+ *           experimental fields are not managed
+ *
+ * @see https://en.wikipedia.org/wiki/Magnet_URI_scheme
+ */
 pub struct Magnet {
-    pub link: String,
-    pub header: String,   // should be magnet:?
-    pub xts: Vec<Xt>,     // eXact Topic: URN containing hash
-    pub dn: String,       // Display Name: filename shown to user
-    pub xl: u128,         // eXact Length: filesize
-    pub acs: String,      // Acceptable Source: web link to the file online
-    pub xs: String,       // eXact Source: P2P link identified by a content-hash
-    pub kt: Vec<String>,  // Keyword Topic: key words for search
-    pub mt: String, // Manifest Topic:  link to the metafile that contains a list of magneto (see MAGMA)
-    pub trs: Vec<String>, // address TRacker: tracker URL for BitTorrent downloads
-}
-
-pub struct Xt {
-    urn: String,
-    hash: String,
-}
-
-impl std::fmt::Display for Xt {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "urn: {} - hash: {}", self.urn, self.hash)
-    }
+    link: String,
+    header: String,       // should be magnet:?
+    xts: Vec<ExactTopic>, // eXact Topic: URN containing hash
+    dn: String,           // Display Name: filename shown to user
+    acs: String,          // Acceptable Source: web link to the file online
+    kt: Vec<String>,      // Keyword Topic: key words for search
+    trs: Vec<String>,     // address TRacker: tracker URL for BitTorrent downloads
+    xs: String,           // eXact Source: P2P link identified by a content-hash
+    xl: u128,             // eXact Length: filesize
+    mt: String, // Manifest Topic:  link to the metafile that contains a list of magneto (see MAGMA)
 }
 
 impl Magnet {
@@ -42,6 +41,7 @@ impl Magnet {
         };
         res
     }
+
     fn find_header(&self) -> Option<usize> {
         self.link.find("magnet:?")
     }
@@ -58,7 +58,7 @@ impl Magnet {
         Some(results)
     }
 
-    fn get_tr(&self) -> Option<Vec<String>> {
+    pub fn get_tr(&self) -> Option<Vec<String>> {
         let mut results = Vec::new();
         let re = regex::Regex::new(r"tr=(.+?)(&|$)").unwrap();
         let trs_found = re.find_iter(&(self.link));
@@ -73,7 +73,7 @@ impl Magnet {
         Some(results)
     }
 
-    fn get_dn(&self) -> Option<String> {
+    pub fn get_dn(&self) -> Option<String> {
         let mut result: String;
         let re = regex::Regex::new(r"dn=(.+?)(&|$)").unwrap();
         let dns_found = re.find_iter(&(self.link)).last().unwrap().as_str();
@@ -83,15 +83,19 @@ impl Magnet {
         result = dns_found.into_owned();
         Some(result)
     }
+
+    pub fn get_header(&self) -> String {
+        if let Some(_i) = self.link.find("magnet:?") {
+            String::from("magnet:?")
+        } else {
+            String::from("")
+        }
+    }
 }
 
-fn parse_xt(xts_out: &mut Vec<Xt>, xts: Vec<String>) {
+fn parse_xt(xts_out: &mut Vec<ExactTopic>, xts: Vec<String>) {
     for xt_ in xts {
-        let xt_splitted = xt_.split(":").collect::<Vec<&str>>();
-        let xt_tmp = Xt {
-            urn: String::from(xt_splitted[1]),
-            hash: String::from(xt_splitted[2]),
-        };
+        let xt_tmp = ExactTopic::from_string(&xt_).unwrap();
         xts_out.push(xt_tmp);
     }
 }
@@ -134,8 +138,16 @@ pub fn from_string(magnet_link: String) -> Result<Magnet, String> {
 
 #[cfg(test)]
 mod tests {
+
     #[test]
     fn simple_test() {
         assert_eq!(1, 2 - 1);
     }
+
+    // test with string ok
+    // test with ok xt
+    // test with ok 2 xt
+    // test with xt that have a unexisting hash tech
+    // test with xt that only have 1 ":" in it
+
 }

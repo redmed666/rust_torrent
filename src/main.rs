@@ -22,9 +22,9 @@ fn main() {
             magnet::Magnet::new()
         }
     };
-    println!("{}", mag.header);
-    for tr in mag.trs {
+    println!("{}", mag.get_header());
+    for tr in mag.get_tr().unwrap() {
         println!("{}", tr);
     }
-    println!("{}", mag.dn);
+    println!("{}", mag.get_dn().unwrap());
 }
