@@ -103,7 +103,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "This hash technology is not managed")]
     fn tech_ko() {
-        let result = HashTech::from_string("bite").unwrap();
+        let _result = HashTech::from_string("bite").unwrap();
     }
 
 }
