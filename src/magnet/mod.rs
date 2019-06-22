@@ -3,9 +3,12 @@ extern crate url;
 
 mod exact_topic;
 mod hash_tech;
+mod protocol;
+mod tracker;
 
 use exact_topic::ExactTopic;
 use regex::Regex;
+use tracker::Tracker;
 
 /**
  * @overview contains information that could be stored in a magnet link
@@ -21,7 +24,7 @@ pub struct Magnet {
     acs: String,          // Acceptable Source: web link to the file online
     xs: String,           // eXact Source: P2P link identified by a content-hash
     kts: Vec<String>,     // Keyword Topic: key words for search
-    trs: Vec<String>,     // address TRacker: tracker URL for BitTorrent downloads
+    trs: Vec<Tracker>,    // address TRacker: tracker URL for BitTorrent downloads
     mt: String, // Manifest Topic:  link to the metafile that contains a list of magneto (see MAGMA)
 }
 
@@ -49,7 +52,7 @@ impl Magnet {
         &self.xts
     }
 
-    pub fn get_tr(&self) -> &Vec<String> {
+    pub fn get_tr(&self) -> &Vec<Tracker> {
         &self.trs
     }
 
@@ -95,12 +98,15 @@ impl Magnet {
         }
 
         // TR
-        let mut trs: Vec<String> = Vec::new();
+        let mut trs: Vec<Tracker> = Vec::new();
         let re_tr = Regex::new(r"tr=(?P<tr>.+?)(&|$)").unwrap();
 
         for tr_capture in re_tr.captures_iter(&magnet_link) {
-            let tr_str = String::from(tr_capture.name("tr").unwrap().as_str());
-            trs.push(tr_str);
+            if let Ok(tracker) = Tracker::from_string(tr_capture.name("tr").unwrap().as_str()) {
+                trs.push(tracker);
+            } else {
+                println!("Error trying to add a tracker");
+            }
         }
 
         // DN
